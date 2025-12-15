@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+<meta charset="UTF-8">
+<title>Testga kirish</title>
+<link rel="stylesheet" href="css/style.css">
+
+<style>
+.input{
+  width:100%;
+  padding:12px;
+  margin-bottom:12px;
+  border-radius:8px;
+  border:1px solid #ccc;
+  font-size:16px;
+}
+</style>
+</head>
+
+<body class="bg-gradient">
+
+<div class="card">
+  <h2>🧑‍🎓 Testga kirish</h2>
+
+  <input id="ism" class="input" placeholder="Ism">
+  <input id="familiya" class="input" placeholder="Familiya">
+  <input id="testId" class="input" placeholder="Test ID">
+
+  <button class="btn green big" onclick="startTest()">
+    TESTNI BOSHLASH
+  </button>
+</div>
+
+<script>
+function startTest(){
+  const ism = document.getElementById("ism").value.trim();
+  const familiya = document.getElementById("familiya").value.trim();
+  const testId = document.getElementById("testId").value.trim();
+
+  if(!ism || !familiya || !testId){
+    alert("Iltimos, barcha maydonlarni to‘ldiring");
+    return;
+  }
+
+  localStorage.setItem("currentUser", JSON.stringify({
+    ism, familiya
+  }));
+  localStorage.setItem("currentTestId", testId);
+
+  window.location.href = "test.html";
+}
+</script>
+
+</body>
+</html>

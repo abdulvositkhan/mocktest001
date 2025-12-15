@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+  <meta charset="UTF-8">
+  <title>Admin kirish</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body class="bg-gradient">
+
+  <div class="card">
+    <h2>Admin kirish</h2>
+
+    <input id="login" type="text" placeholder="Login" class="input">
+    <input id="password" type="password" placeholder="Parol" class="input">
+
+    <button class="btn blue big" onclick="adminLogin()">KIRISH</button>
+
+    <p id="error" class="error"></p>
+  </div>
+
+<script>
+function adminLogin() {
+  const login = document.getElementById("login").value.trim();
+  const password = document.getElementById("password").value.trim();
+  const error = document.getElementById("error");
+
+  if (login === "Abdullayev" && password === "6693") {
+    localStorage.setItem("admin", "true");
+    window.location.href = "creator.html";
+  } else {
+    error.innerText = "❌ Login yoki parol noto‘g‘ri";
+  }
+}
+</script>
+
+<style>
+.input {
+  width: 100%;
+  padding: 12px;
+  margin-bottom: 12px;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+  font-size: 16px;
+}
+
+.error {
+  color: red;
+  margin-top: 10px;
+}
+</style>
+
+</body>
+</html>

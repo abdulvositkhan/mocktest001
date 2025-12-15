@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+<meta charset="UTF-8">
+<title>Admin — Test yaratish</title>
+<link rel="stylesheet" href="css/style.css">
+
+<style>
+.container{
+  max-width:1000px;
+  margin:auto;
+}
+.input{
+  width:100%;
+  padding:10px;
+  margin:6px 0;
+}
+.question-card{
+  border:1px solid #ddd;
+  padding:10px;
+  margin-top:10px;
+  border-radius:8px;
+}
+.option{
+  margin-left:10px;
+}
+img.preview{
+  max-width:200px;
+  display:block;
+  margin:8px 0;
+}
+.small{
+  font-size:13px;
+  color:#555;
+}
+</style>
+</head>
+
+<body class="bg-gradient">
+<div class="card container">
+
+<h2>🛠 Test yaratish / tahrirlash</h2>
+
+<input id="testId" class="input" placeholder="Test ID">
+<input id="duration" class="input" type="number" placeholder="Davomiylik (daq)">
+
+<hr>
+
+<h3>📂 Excel orqali savol yuklash</h3>
+<input type="file" id="excelFile" accept=".xlsx">
+<button class="btn blue" onclick="loadExcel()">Excel yuklash</button>
+<p id="excelMsg" class="small"></p>
+
+<hr>
+
+<h3>✍️ Qo‘lda savol qo‘shish</h3>
+
+<input id="qText" class="input" placeholder="Savol matni">
+
+<label class="small">Rasm URL (ixtiyoriy)</label>
+<input id="imgUrl" class="input" placeholder="https://...">
+
+<label class="small">YOKI kompyuterdan rasm tanlash</label>
+<input type="file" id="imgFile" accept="image/*">
+
+<input id="a" class="input" placeholder="A variant">
+<input id="b" class="input" placeholder="B variant">
+<input id="c" class="input" placeholder="C variant">
+<input id="d" class="input" placeholder="D variant">
+
+<select id="correct" class="input">
+  <option value="">To‘g‘ri javob</option>
+  <option>A</option>
+  <option>B</option>
+  <option>C</option>
+  <option>D</option>
+</select>
+
+<button class="btn green" onclick="addQuestion()">Savol qo‘shish</button>
+
+<p id="count">Savollar: 0 / 50</p>
+
+<hr>
+
+<h3>📋 Savollar ro‘yxati</h3>
+<div id="questionList"></div>
+
+<hr>
+
+<button class="btn blue" onclick="saveTest()">💾 Testni saqlash</button>
+<button class="btn" onclick="location.href='results.html'">📊 Natijalar</button>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+
+<script>
+let questions = [];
+let editing = false;
+
+/* RASMNI BASE64 GA O‘GIRISH */
+function getImage(callback){
+  const file = imgFile.files[0];
+  if(file){
+    const reader = new FileReader();
+    reader.onload = () => callback(reader.result);
+    reader.readAsDataURL(file);
+  }else{
+    callback(imgUrl.value || "");
+  }
+}
+
+/* SAVOL QO‘SHISH */
+function addQuestion(){
+  if(questions.length >= 50){
+    alert("50 ta savol bo‘ldi");
+    return;
+  }
+  if(!qText.value || !correct.value){
+    alert("Savol va to‘g‘ri javob majburiy");
+    return;
+  }
+
+  getImage(imageData=>{
+    const q = {
+      text: qText.value,
+      image: imageData,
+      options:{
+        A:a.value, B:b.value, C:c.value, D:d.value
+      },
+      correct: correct.value
+    };
+    questions.push(q);
+    clearInputs();
+    renderQuestions();
+  });
+}
+
+function clearInputs(){
+  qText.value = imgUrl.value = a.value = b.value = c.value = d.value = "";
+  imgFile.value = "";
+  correct.value = "";
+}
+
+/* SAVOLLARNI CHIQARISH */
+function renderQuestions(){
+  questionList.innerHTML = "";
+  questions.forEach((q,i)=>{
+    questionList.innerHTML += `
+      <div class="question-card">
+        <b>${i+1}. ${q.text}</b>
+        ${q.image ? `<img src="${q.image}" class="preview">` : ""}
+        <div class="option">A) ${q.options.A}</div>
+        <div class="option">B) ${q.options.B}</div>
+        <div class="option">C) ${q.options.C}</div>
+        <div class="option">D) ${q.options.D}</div>
+        <div><b>To‘g‘ri:</b> ${q.correct}</div>
+        <button onclick="removeQuestion(${i})">❌ O‘chirish</button>
+      </div>
+    `;
+  });
+  count.innerText = `Savollar: ${questions.length} / 50`;
+}
+
+function removeQuestion(i){
+  questions.splice(i,1);
+  renderQuestions();
+}
+
+/* TESTNI SAQLASH */
+function saveTest(){
+  if(!testId.value){
+    alert("Test ID majburiy");
+    return;
+  }
+  const tests = JSON.parse(localStorage.getItem("allTests")) || {};
+  tests[testId.value] = {
+    duration: duration.value,
+    questions: questions
+  };
+  localStorage.setItem("allTests", JSON.stringify(tests));
+  alert("Test saqlandi");
+}
+
+/* EXCEL YUKLASH */
+function loadExcel(){
+  const file = excelFile.files[0];
+  if(!file) return;
+
+  const reader = new FileReader();
+  reader.onload = e=>{
+    const wb = XLSX.read(e.target.result,{type:"binary"});
+    const sheet = wb.Sheets[wb.SheetNames[0]];
+    const rows = XLSX.utils.sheet_to_json(sheet);
+
+    rows.forEach(r=>{
+      if(questions.length < 50){
+        questions.push({
+          text:r.Savol,
+          image:r.Rasm || "",
+          options:{A:r.A,B:r.B,C:r.C,D:r.D},
+          correct:r.Togri
+        });
+      }
+    });
+    renderQuestions();
+    excelMsg.innerText = "Excel yuklandi";
+  };
+  reader.readAsBinaryString(file);
+}
+</script>
+
+</body>
+</html>

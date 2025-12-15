@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+<meta charset="UTF-8">
+<title>Test topshirish</title>
+<link rel="stylesheet" href="css/style.css">
+
+<style>
+body{
+  background:#ecfdf5;
+  margin:0;
+  padding:20px;
+}
+
+.test-card{
+  max-width:900px;
+  margin:auto;
+  background:#fff;
+  padding:30px;
+  border-radius:18px;
+  border:2px solid #e5e7eb;
+}
+
+.timer{
+  position:fixed;
+  top:20px;
+  right:20px;
+  background:#dc2626;
+  color:white;
+  padding:14px 20px;
+  border-radius:14px;
+  font-size:20px;
+  font-weight:bold;
+}
+
+.question{
+  font-size:22px;
+  font-weight:bold;
+  margin-bottom:20px;
+}
+
+.question img{
+  max-width:100%;
+  margin-top:15px;
+  border-radius:12px;
+}
+
+.option{
+  display:flex;
+  align-items:center;
+  gap:12px;
+  padding:14px;
+  border:2px solid #d1d5db;
+  border-radius:12px;
+  margin-bottom:12px;
+  cursor:pointer;
+}
+
+.option input{
+  cursor:pointer;
+}
+
+.option:hover{
+  background:#f0fdf4;
+}
+
+.nav{
+  display:flex;
+  justify-content:space-between;
+  margin-top:25px;
+}
+
+button{
+  padding:14px 24px;
+  font-size:16px;
+  font-weight:bold;
+  border:none;
+  border-radius:12px;
+  cursor:pointer;
+}
+
+.next{background:#4f46e5;color:white}
+.prev{background:#6b7280;color:white}
+.finish{
+  width:100%;
+  background:#16a34a;
+  color:white;
+  margin-top:20px;
+}
+</style>
+</head>
+
+<body>
+
+<div class="timer" id="timer">00:00</div>
+
+<div class="test-card">
+  <div id="qBox"></div>
+  <div id="options"></div>
+
+  <div class="nav">
+    <button class="prev" onclick="prev()">⬅ Oldingi</button>
+    <button class="next" onclick="next()">Keyingi ➡</button>
+  </div>
+
+  <button id="finishBtn" class="finish" onclick="finish()" style="display:none">
+    TESTNI YAKUNLASH
+  </button>
+</div>
+
+<script>
+const testId = localStorage.getItem("currentTestId");
+const user = JSON.parse(localStorage.getItem("currentUser"));
+const tests = JSON.parse(localStorage.getItem("allTests")) || {};
+const test = tests[testId];
+
+if(!test){
+  alert("Test topilmadi");
+  location.href = "taker.html";
+}
+
+let index = 0;
+let answers = {};
+let timeLeft = (test.duration || 30) * 60;
+
+/* TIMER */
+setInterval(()=>{
+  const m = Math.floor(timeLeft/60);
+  const s = timeLeft % 60;
+  timer.innerText = `${m}:${String(s).padStart(2,"0")}`;
+  timeLeft--;
+  if(timeLeft < 0) finish();
+},1000);
+
+/* SAVOL CHIQARISH */
+function render(){
+  const q = test.questions[index];
+
+  qBox.innerHTML = `
+    <div class="question">
+      ${index+1}. ${q.text}
+      ${q.image ? `<img src="${q.image}">` : ""}
+    </div>
+  `;
+
+  options.innerHTML = "";
+  for(const key in q.options){
+    const checked = answers[index] === key ? "checked" : "";
+    options.innerHTML += `
+      <label class="option">
+        <input type="radio" name="q${index}" value="${key}" ${checked}
+          onchange="select('${key}')">
+        <span>${key}) ${q.options[key]}</span>
+      </label>
+    `;
+  }
+
+  finishBtn.style.display =
+    index === test.questions.length-1 ? "block" : "none";
+}
+
+function select(val){
+  answers[index] = val;
+}
+
+function next(){
+  if(index < test.questions.length-1){
+    index++;
+    render();
+  }
+}
+
+function prev(){
+  if(index > 0){
+    index--;
+    render();
+  }
+}
+
+/* TESTNI YAKUNLASH */
+function finish(){
+  let correct = 0;
+  test.questions.forEach((q,i)=>{
+    if(answers[i] === q.correct) correct++;
+  });
+
+  const ball = correct * 2;
+  const endTime = new Date().toLocaleString();
+
+  const results = JSON.parse(localStorage.getItem("results")) || [];
+  results.push({
+    ism: user.ism,
+    familiya: user.familiya,
+    testId,
+    ball,
+    answers,
+    questions: test.questions,
+    endTime
+  });
+
+  localStorage.setItem("results", JSON.stringify(results));
+  location.href = "results.html";
+}
+
+render();
+</script>
+
+</body>
+</html>

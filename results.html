@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+<meta charset="UTF-8">
+<title>Test natijasi</title>
+<link rel="stylesheet" href="css/style.css">
+
+<style>
+body{
+  background:#ecfdf5;
+  margin:0;
+  padding:30px;
+  font-family:Arial,sans-serif;
+}
+
+.container{
+  max-width:1000px;
+  margin:auto;
+  background:#fff;
+  padding:30px;
+  border-radius:20px;
+  border:2px solid #e5e7eb;
+}
+
+.result-box{
+  text-align:center;
+  padding:30px;
+  border-radius:18px;
+  margin-bottom:30px;
+}
+
+.fail{background:#fee2e2;}
+.second{background:#ffedd5;}
+.first{background:#fef9c3;}
+.high{background:#dcfce7;}
+
+.big{
+  font-size:40px;
+  font-weight:bold;
+}
+
+.time{
+  margin-top:10px;
+  color:#374151;
+}
+
+.detail{
+  border:1px solid #e5e7eb;
+  border-radius:12px;
+  padding:15px;
+  margin-top:12px;
+}
+
+.ok{background:#ecfdf5;}
+.bad{background:#fee2e2;}
+
+button{
+  padding:12px 18px;
+  border:none;
+  border-radius:10px;
+  cursor:pointer;
+  font-weight:bold;
+  margin:5px;
+}
+
+.excel{background:#16a34a;color:white;}
+.pdf{background:#dc2626;color:white;}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+  <h1 style="text-align:center">📊 Test natijasi</h1>
+
+  <div style="text-align:center;margin-bottom:20px">
+    <button class="excel" onclick="exportExcel()">📥 Excel</button>
+    <button class="pdf" onclick="exportPDF()">📄 PDF</button>
+  </div>
+
+  <div id="summary"></div>
+
+  <h2>📋 Batafsil natijalar</h2>
+  <div id="details"></div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+
+<script>
+const results = JSON.parse(localStorage.getItem("results")) || [];
+const last = results[results.length-1];
+
+if(!last){
+  alert("Natija topilmadi");
+  location.href="index.html";
+}
+
+const ball = last.ball;
+let text="", cls="fail";
+
+if(ball < 60){
+  text = "Attestatsiya Mock testdan o‘tilmadi";
+  cls = "fail";
+}else if(ball < 70){
+  text = "Attestatsiya Mock testdan Ikkinchi toifa balini to‘pladingiz";
+  cls = "second";
+}else if(ball < 80){
+  text = "Attestatsiya Mock testdan Birinchi toifa balini to‘pladingiz";
+  cls = "first";
+}else{
+  text = "Attestatsiya Mock testdan Oliy toifa balini to‘pladingiz";
+  cls = "high";
+}
+
+summary.innerHTML = `
+  <div class="result-box ${cls}">
+    <div class="big">${ball}/100</div>
+    <div style="font-size:18px;margin-top:10px">${text}</div>
+    <div class="time">Test tugagan vaqt: ${last.endTime}</div>
+  </div>
+`;
+
+// Batafsil savollar
+last.questions.forEach((q,i)=>{
+  const userAns = last.answers[i];
+  const correct = q.correct;
+  const ok = userAns === correct;
+
+  details.innerHTML += `
+    <div class="detail ${ok?'ok':'bad'}">
+      <b>${i+1}. ${q.text}</b><br>
+      Sizning javobingiz: <b>${userAns || "-"}</b><br>
+      ${ok ? "✅ To‘g‘ri" : `❌ Xato (To‘g‘ri javob: ${correct})`}
+    </div>
+  `;
+});
+
+/* EXCEL */
+function exportExcel(){
+  const data = results.map(r=>({
+    Ism:r.ism,
+    Familiya:r.familiya,
+    TestID:r.testId,
+    Ball:r.ball,
+    Tugagan_vaqt:r.endTime
+  }));
+  const ws = XLSX.utils.json_to_sheet(data);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "Natijalar");
+  XLSX.writeFile(wb, "natijalar.xlsx");
+}
+
+/* PDF */
+function exportPDF(){
+  const { jsPDF } = window.jspdf;
+  const pdf = new jsPDF();
+  pdf.text("Attestatsiya Mock Test Natijalari", 10, 10);
+
+  let y = 20;
+  results.forEach((r,i)=>{
+    pdf.text(
+      `${i+1}) ${r.ism} ${r.familiya} — ${r.ball}/100`,
+      10, y
+    );
+    y += 8;
+  });
+
+  pdf.save("natijalar.pdf");
+}
+</script>
+
+</body>
+</html>
